@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor de Sprites 8x8 — Electrónica Digital</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #121820;
+    --panel-border: #22303c;
+    --pixel-off: #1a2430;
+    --pixel-on: #ffb020;
+    --pixel-on-glow: rgba(255, 176, 32, 0.35);
+    --accent: #ffb020;
+    --text: #e7edf3;
+    --text-dim: #7c8ba1;
+    --mono: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(255,176,32,0.06), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(255,176,32,0.04), transparent 40%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 440px;
+  }
+
+  header {
+    margin-bottom: 28px;
+  }
+
+  .kicker {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+    letter-spacing: -0.01em;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-top: 22px;
+  }
+
+  .grid-frame {
+    background: #080b0f;
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 12px;
+    display: inline-grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    width: 100%;
+  }
+
+  .pixel {
+    aspect-ratio: 1 / 1;
+    background: var(--pixel-off);
+    border-radius: 3px;
+    border: 1px solid #263241;
+    cursor: pointer;
+    transition: background-color 0.08s ease, box-shadow 0.08s ease;
+  }
+
+  .pixel:hover {
+    border-color: #37475a;
+  }
+
+  .pixel.on {
+    background: var(--pixel-on);
+    box-shadow: 0 0 10px var(--pixel-on-glow);
+    border-color: var(--pixel-on);
+  }
+
+  .readout {
+    margin-top: 18px;
+  }
+
+  .readout-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .hex-value {
+    font-family: var(--mono);
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--accent);
+    background: #080b0f;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    letter-spacing: 0.06em;
+    word-break: break-all;
+  }
+
+  .controls {
+    margin-top: 18px;
+    display: flex;
+    gap: 8px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    background: #080b0f;
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 11px 12px;
+    border-radius: 8px;
+    outline: none;
+    text-transform: uppercase;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--accent);
+  }
+
+  input[type="text"]::placeholder {
+    color: #4a5a6d;
+    text-transform: none;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 11px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #1a1204;
+  }
+
+  .btn-primary:hover { background: #ffc247; }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .btn-secondary:hover {
+    border-color: #37475a;
+    color: var(--text);
+  }
+
+  .status {
+    min-height: 18px;
+    font-size: 13px;
+    color: #ff6b6b;
+    margin-top: 8px;
+  }
+
+  footer {
+    margin-top: 20px;
+    color: var(--text-dim);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  footer code {
+    font-family: var(--mono);
+    background: #121820;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">ELECTRÓNICA DIGITAL · CUL</div>
+      <h1>Editor de sprites 8×8</h1>
+      <p class="subtitle">Enciende píxeles en la cuadrícula y observa cómo se codifican como 64 bits, empaquetados en un valor hexadecimal de 16 dígitos.</p>
+    </header>
+
+    <div class="panel">
+      <div id="grid" class="grid-frame"></div>
+
+      <div class="readout">
+        <div class="readout-label">Valor hexadecimal (16 dígitos)</div>
+        <div id="hexOutput" class="hex-value">0000000000000000</div>
+      </div>
+
+      <div class="controls">
+        <input id="hexInput" type="text" maxlength="16" placeholder="Ej: 1A2B3C4D5E6F0000">
+        <button class="btn-primary" id="loadBtn">Cargar Hex</button>
+      </div>
+      <div id="status" class="status"></div>
+
+      <button class="btn-secondary" id="clearBtn">Limpiar cuadrícula</button>
+    </div>
+
+    <footer>
+      Cada clic hace un barrido de los 64 píxeles (1 = encendido, 0 = apagado) y convierte esa cadena binaria a <code>hexadecimal</code>. "Cargar Hex" hace el proceso inverso: expande el hex a binario de 64 bits y repinta la cuadrícula.
+    </footer>
+  </div>
+
+<script>
+  const ROWS = 8;
+  const COLS = 8;
+  const TOTAL_BITS = ROWS * COLS;
+
+  const gridEl = document.getElementById('grid');
+  const hexOutput = document.getElementById('hexOutput');
+  const hexInput = document.getElementById('hexInput');
+  const loadBtn = document.getElementById('loadBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const statusEl = document.getElementById('status');
+
+  // Estado lógico: 0 = apagado, 1 = encendido
+  let state = new Array(TOTAL_BITS).fill(0);
+  let cells = [];
+
+  function buildGrid() {
+    for (let i = 0; i < TOTAL_BITS; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'pixel';
+      cell.addEventListener('click', () => togglePixel(i));
+      gridEl.appendChild(cell);
+      cells.push(cell);
+    }
+  }
+
+  function togglePixel(index) {
+    state[index] = state[index] === 0 ? 1 : 0;
+    cells[index].classList.toggle('on', state[index] === 1);
+    updateHexFromScreen();
+  }
+
+  // Dirección 1: pantalla -> binario (64 bits) -> hexadecimal
+  function updateHexFromScreen() {
+    const binaryString = state.join(''); // barrido secuencial de los 64 elementos
+    const hex = BigInt('0b' + binaryString).toString(16).toUpperCase().padStart(16, '0');
+    hexOutput.textContent = hex;
+  }
+
+  // Dirección 2: hexadecimal -> binario (64 bits) -> pantalla
+  function loadFromHex() {
+    const raw = hexInput.value.trim().toUpperCase();
+    statusEl.textContent = '';
+
+    if (raw.length === 0 || raw.length > 16) {
+      statusEl.textContent = 'Debe tener entre 1 y 16 caracteres.';
+      return;
+    }
+    if (!/^[0-9A-F]+$/.test(raw)) {
+      statusEl.textContent = 'Solo se permiten caracteres 0-9 y A-F.';
+      return;
+    }
+
+    const value = BigInt('0x' + raw);
+    const binaryString = value.toString(2).padStart(TOTAL_BITS, '0');
+
+    for (let i = 0; i < TOTAL_BITS; i++) {
+      state[i] = binaryString[i] === '1' ? 1 : 0;
+      cells[i].classList.toggle('on', state[i] === 1);
+    }
+
+    hexOutput.textContent = value.toString(16).toUpperCase().padStart(16, '0');
+  }
+
+  function clearGrid() {
+    state = new Array(TOTAL_BITS).fill(0);
+    cells.forEach(c => c.classList.remove('on'));
+    hexInput.value = '';
+    statusEl.textContent = '';
+    updateHexFromScreen();
+  }
+
+  loadBtn.addEventListener('click', loadFromHex);
+  clearBtn.addEventListener('click', clearGrid);
+  hexInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loadFromHex();
+  });
+
+  buildGrid();
+  updateHexFromScreen();
+</script>
+</body>
+</html>
